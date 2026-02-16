@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Advanced Parking | Live Tracking</title>
+    <style>
+        :root {
+            --office: #6c5ce7;
+            --online: #0984e3;
+            --live: #f1c40f;
+            --empty: #ffffff;
+            --sidebar-bg: #1e272e;
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f1f2f6; }
+
+        /* Sidebar Stats */
+        .sidebar { width: 320px; background: var(--sidebar-bg); color: white; padding: 25px; height: 100vh; box-sizing: border-box; }
+        .stat-card { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 12px; border-left: 5px solid transparent; }
+        .stat-card h4 { margin: 0; font-size: 12px; text-transform: uppercase; opacity: 0.7; }
+        .stat-card p { margin: 8px 0 0; font-size: 20px; font-weight: bold; }
+
+        /* Main Parking Area */
+        .main { flex: 1; padding: 40px; }
+        .parking-grid { 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); 
+            gap: 15px; 
+            background: #d1d8e0; 
+            padding: 25px; 
+            border-radius: 15px;
+        }
+
+        .slot {
+            height: 100px;
+            background: var(--empty);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            border: 2px solid #a5b1c2;
+            transition: 0.3s;
+        }
+
+        /* Booking Status Colors */
+        .slot.office { border-color: var(--office); color: var(--office); background: #efedff; }
+        .slot.online { border-color: var(--online); color: var(--online); background: #e3f2fd; }
+        .slot.live { border-color: var(--live); background: #fff9e6; animation: blink 2s infinite; }
+        .slot.available { cursor: pointer; border-style: dashed; }
+        .slot.available:hover { background: #e8f5e9; border-color: #2ecc71; }
+
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
+        .confirm-btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--live);
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .timestamp { font-size: 10px; color: #7f8c8d; margin-top: 4px; }
+
+        /* ===== MODAL POPUP ===== */
+#modalOverlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+#bookingModal {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#bookingModal input,
+#bookingModal select {
+    padding: 10px;
+}
+
+#bookingModal button {
+    padding: 10px;
+    background: #e74c3c;
+    border: none;
+    color: white;
+    cursor: pointer;
+}
+
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2> Advance Parking System 🅿️ Parking Live</h2>
+    
+    <div class="stat-card" style="border-color: var(--office)">
+        <h4>Office Booking</h4>
+        <p>5 Slots Allocated</p>
+    </div>
+    
+    <div class="stat-card" style="border-color: var(--online)">
+        <h4>Online Bookings</h4>
+        <p>10 Slots Reserved</p>
+    </div>
+
+    <div class="stat-card" style="border-color: var(--live)">
+        <h4>Live Visit Time</h4>
+        <p id="live-timer">Waiting...</p>
+    </div>
+
+    <div class="stat-card" style="border-color: #2ecc71">
+        <h4>Available Spots</h4>
+        <p id="avail-count">5</p>
+    </div>
+
+    
+</div>
+
+<div class="main">
+    <h1>Real-Time Floor Map</h1>
+    <div class="parking-grid" id="grid"></div>
+
+    <!-- ===== BOOKING POPUP MODAL ===== -->
+<div id="modalOverlay">
+    <div id="bookingModal">
+        <h3 id="modalTitle">Live Visit Booking</h3>
+        <p id="modalMsg" style="color:red; font-size:13px;"></p>
+
+
+        <input type="text" id="name" placeholder="Enter Name">
+        <input type="text" id="mobile" placeholder="Enter Mobile Number">
+
+        <select id="vehicle">
+            <option value="">Select Vehicle</option>
+            <option value="2-wheeler">2-wheeler</option>
+            <option value="3-wheeler">3-wheeler</option>
+            <option value="4-wheeler">4-wheeler</option>
+        </select>
+
+        <input type="text" id="mh" placeholder="Enter MH Number">
+
+        <button style="background:#2ecc71" onclick="bookLive()">Save Booking</button>
+        <button onclick="closeModal()">Cancel</button>
+
+    </div>
+</div>
+
+
+<script>
+    let selectedSlotId = null;
+    const totalSpots = 20;
+    
+    // Data Structure
+    const parkingData = {
+        office: [1, 2, 3, 4, 5],
+        online: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+        live: [] // Will store {id, time}
+    };
+
+    function renderGrid() {
+        const grid = document.getElementById('grid');
+        grid.innerHTML = '';
+        let availCount = 0;
+
+        for (let i = 1; i <= totalSpots; i++) {
+            const div = document.createElement('div');
+            div.id = `slot-${i}`;
+            
+            if (parkingData.office.includes(i)) {
+                div.className = 'slot office';
+                div.innerHTML = '🏢 OFFICE';
+            } else if (parkingData.online.includes(i)) {
+                div.className = 'slot online';
+                div.innerHTML = '🌐 ONLINE';
+                div.onclick = () => openInfoBox(i, "online");
+            } else {
+                // Check if already booked as live
+                const liveBooking = parkingData.live.find(b => b.id === i);
+                if (liveBooking) {
+                    div.className = 'slot live';
+                    div.innerHTML = `📍 LIVE<div class="timestamp">${liveBooking.time}</div>`;
+                } else {
+                    div.className = 'slot available';
+                    div.innerText = `Slot ${i}`;
+                    div.onclick = () => selectForLive(i);
+                    availCount++;
+                }
+            }
+            grid.appendChild(div);
+        }
+        document.getElementById('avail-count').innerText = availCount;
+    }
+
+    function selectForLive(id) {
+        // Remove previous selection highlight
+        document.querySelectorAll('.slot').forEach(s => s.style.backgroundColor = "");
+        selectedSlotId = id;
+        document.getElementById(`slot-${id}`).style.backgroundColor = "#ffeaa7";
+
+        // SHOW MODAL
+        document.getElementById("modalOverlay").style.display = "flex";
+
+        document.getElementById("modalTitle").innerText = "Live Visit Booking";
+        document.getElementById("modalMsg").innerText = "";
+
+        // enable inputs
+        document.getElementById("name").disabled = false;
+        document.getElementById("mobile").disabled = false;
+        document.getElementById("vehicle").disabled = false;
+        document.getElementById("mh").disabled = false;
+    }
+
+    function bookLive() {
+        if (!selectedSlotId) {
+            alert("Please select an available slot for the Live Visit!");
+            return;
+        }
+
+         // Take values from the input fields
+        const name = document.getElementById("name").value;
+        const mobile = document.getElementById("mobile").value;
+        const vehicle = document.getElementById("vehicle").value;
+        const mh = document.getElementById("mh").value;
+
+        fetch("http://127.0.0.1:5000/save-booking", {
+         method: "POST",
+         headers: { "Content-Type": "application/x-www-form-urlencoded" },
+         body:  `name=${encodeURIComponent(name)}&mobile=${encodeURIComponent(mobile)}&vehicle=${encodeURIComponent(vehicle)}&mh=${encodeURIComponent(mh)}`
+
+        });
+
+        const now = new Date();
+        const timeStr = now.getHours() + ":" + now.getMinutes().toString().padStart(2, '0');
+
+        
+        
+        parkingData.live.push({ id: selectedSlotId, time: timeStr });
+        document.getElementById('live-timer').innerText = "Last: " + timeStr;
+
+        document.getElementById("name").value = "";
+        document.getElementById("mobile").value = "";
+        document.getElementById("vehicle").value = "";
+        document.getElementById("mh").value = "";
+        
+        alert(`Booking Saved!\nSlot: ${selectedSlotId}\nTime: ${timeStr}`);
+        
+        selectedSlotId = null;
+
+        closeModal();
+
+        renderGrid();
+    }
+
+    function closeModal() {
+    document.getElementById("modalOverlay").style.display = "none";
+}
+
+function openInfoBox(id, type) {
+    selectedSlotId = null; // prevent booking
+
+    document.getElementById("modalOverlay").style.display = "flex";
+
+    document.getElementById("modalTitle").innerText = "Slot Information";
+    document.getElementById("modalMsg").innerText =
+        "This slot is already reserved (Online Booking). You cannot book this slot.";
+
+    // disable inputs
+    document.getElementById("name").disabled = true;
+    document.getElementById("mobile").disabled = true;
+    document.getElementById("vehicle").disabled = true;
+    document.getElementById("mh").disabled = true;
+}
+
+    renderGrid();
+</script>
+
+
+
+</body>
+</html>

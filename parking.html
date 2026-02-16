@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProPark AI | Management Suite</title>
+    <style>
+        :root {
+            --sidebar-w: 260px;
+            --primary: #1e272e;
+            --accent: #3498db;
+            --office: #6c5ce7;
+            --online: #0984e3;
+            --live: #f1c40f;
+            --text: #f5f6fa;
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; background: #f1f2f6; overflow: hidden;}
+
+        /* --- SIDEBAR --- */
+        .sidebar { width: var(--sidebar-w); background: var(--primary); color: white; display: flex; flex-direction: column; transition: 0.3s; }
+        .sidebar-header { padding: 25px; font-size: 22px; font-weight: bold; background: rgba(0,0,0,0.2); text-align: center; }
+        
+        .nav-links { list-style: none; padding: 0; margin: 20px 0; flex-grow: 1; }
+        .nav-item { 
+            padding: 15px 25px; cursor: pointer; display: flex; align-items: center; 
+            gap: 12px; transition: 0.3s; border-left: 4px solid transparent;
+        }
+        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); border-left-color: var(--accent); }
+        .nav-item i { font-size: 18px; }
+
+        /* --- CONTENT AREA --- */
+        .main-container { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+        .top-bar { background: white; padding: 15px 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-weight: bold; }
+        
+        .page { display: none; padding: 30px; animation: fadeIn 0.4s ease; }
+        .page.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- PARKING GRID STYLE --- */
+        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; background: #ddd; padding: 20px; border-radius: 12px; }
+        .slot { height: 80px; background: white; border-radius: 8px; border: 2px solid #ccc; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .slot.booked-office { background: #efedff; border-color: var(--office); color: var(--office); }
+        .slot.booked-online { background: #e3f2fd; border-color: var(--online); color: var(--online); }
+        .slot.booked-live { background: #fff9e6; border-color: var(--live); color: #967117; }
+
+        /* --- DATA CARDS --- */
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        .iot-chip { background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">🅿️ Advance Parking System AI</div>
+        <ul class="nav-links">
+            <li class="nav-item active" onclick="showPage('dashboard', this)">🏠 Dashboard</li>
+            <li class="nav-item" onclick="showPage('report', this)">📊 Daily Report</li>
+            <li class="nav-item" onclick="showPage('history', this)">🕒 History</li>
+            <li class="nav-item" onclick="showPage('iot', this)">📡 IoT Sensors Info</li>
+            <li class="nav-item" onclick="showPage('about', this)">ℹ️ About</li>
+        </ul>
+        <div style="padding: 20px; font-size: 11px; opacity: 0.5;">System v4.0.2</div>
+    </div>
+
+    <div class="main-container">
+        <div class="top-bar" id="page-title">Dashboard</div>
+
+        <section id="dashboard" class="page active">
+            <h2>Real-Time Parking Map</h2>
+            <div class="grid">
+                <div class="slot booked-office">Office 1</div>
+                <div class="slot booked-online">Online 1</div>
+                <div class="slot booked-online">Online 2</div>
+                <div class="slot booked-live">Live 1</div>
+                <div class="slot">Free 5</div>
+                <div class="slot">Free 6</div>
+                <div class="slot booked-office">Office 2</div>
+                <div class="slot booked-live">Live 2</div>
+                <div class="slot">Free 9</div>
+                <div class="slot">Free 10</div>
+            </div>
+        </section>
+
+        <section id="report" class="page">
+            <div class="card">
+                <h2>Today's Summary (Jan 06, 2026)</h2>
+                <p>Total Revenue: <strong>$450.00</strong></p>
+                <p>Peak Time: <strong>12:00 PM - 02:00 PM</strong></p>
+                <div style="display:flex; gap:10px;">
+                    <div class="card" style="flex:1; background:#efedff">Office: 15 Cars</div>
+                    <div class="card" style="flex:1; background:#e3f2fd">Online: 42 Cars</div>
+                    <div class="card" style="flex:1; background:#fff9e6">Live: 28 Cars</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="history" class="page">
+            <div class="card">
+                <h2>Booking History</h2>
+                <table>
+                    <thead>
+                        <tr><th>ID</th><th>Type</th><th>Slot</th><th>Time In</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>#8821</td><td>Online</td><td>Slot-05</td><td>09:15 AM</td><td>Completed</td></tr>
+                        <tr><td>#8822</td><td>Office</td><td>Slot-01</td><td>10:00 AM</td><td>Active</td></tr>
+                        <tr><td>#8823</td><td>Live</td><td>Slot-12</td><td>11:45 AM</td><td>Active</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="iot" class="page">
+            <h2>IoT Hardware Infrastructure</h2>
+            <div class="card">
+                <h3><span class="iot-chip">CONNECTED</span> ESP32 Controller - Node 01</h3>
+                <p>Monitoring slots 1-10 via Ultrasonic Sensors (HC-SR04).</p>
+            </div>
+            <div class="card">
+                <h3><span class="iot-chip">CONNECTED</span> IR Proximity Sensor - Node 02</h3>
+                <p>Gate Entry/Exit monitoring using Infrared beams.</p>
+            </div>
+            <div class="card">
+                <h3><span class="iot-chip" style="background:#ffebee; color:#c62828">OFFLINE</span> RFID Scanner - Main Gate</h3>
+                <p>Scanning employee tags for automated Office Booking entry.</p>
+            </div>
+            
+        </section>
+
+        <section id="about" class="page">
+            <div class="card">
+                <h2>About ProPark AI</h2>
+                <p>This is an Advanced Parking Management System designed for high-traffic zones. It integrates physical IoT sensors with a cloud-based booking engine to manage Office, Online, and Live visitors efficiently.</p>
+                <p>Developed by: <strong>Your Company Name</strong></p>
+                <p>Contact Support: support@proparkai.com</p>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        function showPage(pageId, navElement) {
+            // 1. Hide all pages
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => page.classList.remove('active'));
+
+            // 2. Show the selected page
+            const selectedPage = document.getElementById(pageId);
+            selectedPage.classList.add('active');
+
+            // 3. Update Sidebar UI
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => item.classList.remove('active'));
+            navElement.classList.add('active');
+
+            // 4. Update Top Bar Title
+            const titles = {
+                'dashboard': 'Live Parking Map',
+                'report': 'Daily Performance Report',
+                'history': 'Transaction & Visit History',
+                'iot': 'IoT Sensor Information',
+                'about': 'System Information'
+            };
+            document.getElementById('page-title').innerText = titles[pageId];
+        }
+    </script>
+</body>
+</html>
